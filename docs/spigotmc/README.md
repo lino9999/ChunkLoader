@@ -2,6 +2,8 @@
 
 Both BBCode files are written in English and ready to paste into SpigotMC's BBCode editor.
 
+The [ChunkLoader icon](assets/chunkloader-icon.png) is a square pixel-art PNG with a grass chunk and gold corner markers. Its [generation prompt](assets/chunkloader-icon.prompt.txt) is included for consistent future artwork.
+
 | Field | Suggested content |
 | --- | --- |
 | Resource title | ChunkLoader - Timed & Infinite Chunk Loaders, Offline Farms |
