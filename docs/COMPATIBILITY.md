@@ -2,7 +2,7 @@
 
 ChunkLoader targets the public Paper 1.21.11 API and Java 21 bytecode. The same plugin JAR runs on Paper 1.21.11 through 26.3. Minecraft 26.x servers require Java 25; this does not require a separate plugin JAR. Spigot and Folia are not supported targets.
 
-## Runtime matrix
+## Initial 1.0.0 runtime matrix
 
 The isolated runtime suite was executed on 24 October 2026 using official Paper downloads with verified SHA-256 checksums.
 
@@ -13,7 +13,9 @@ The isolated runtime suite was executed on 24 October 2026 using official Paper 
 | 26.2 | 134 stable | Microsoft OpenJDK 25.0.1+8-LTS | Pass: 22 assertions | Pass: 5 assertions |
 | 26.3 | 218 stable | Microsoft OpenJDK 25.0.1+8-LTS | Pass: 22 assertions | Pass: 5 assertions |
 
-All 108 runtime assertions passed across the eight boots, and the main project passed 56 unit tests before the owner requested removal of test files. No ChunkLoader event or farm-simulation errors were recorded in the final run. The initially verified JAR had SHA-256 `5f961a5cf50142b9469a904a1ac83afb6ce433930af732dc34e89b791f5b03e7`. A later release rebuild can have a different archive hash because packaging timestamps change; its application code is unchanged.
+For the initial 1.0.0 implementation, all 108 runtime assertions passed across eight boots, along with 56 unit tests. No ChunkLoader event or farm-simulation errors were recorded in that run. The initial verification artifact had SHA-256 `5f961a5cf50142b9469a904a1ac83afb6ce433930af732dc34e89b791f5b03e7`.
+
+The [1.0.1 maintenance audit](AUDIT-1.0.1.md) independently repeated all 108 runtime assertions on the same four server builds and passed 78 focused checks on both Java 21 and 25. Its report records the fixes and final artifact checksum.
 
 The suite checks the registered API, position lookup, ownership, extension access and unregistration, fuel addition, overlapping ticket references, entity-ticking state, expiration and infinite duration. With no connected players, it verifies wheat growth, furnace smelting, hopper transfer and custom spawner entity snapshots. It cancels initial spawner attempts and verifies that cancellation prevents world insertion, event listeners receive the correct entity position, and creature spawn events carry the `SPAWNER` reason. A second boot verifies persisted infinite-loader restoration, ticket recreation and removal.
 
@@ -33,7 +35,7 @@ The simulation preserves current entity snapshots, weighted spawn potentials, de
 
 Public APIs do not expose every native species-specific spawn predicate, spawn-potential equipment-table operation or a direct spawner tick method. Those details are approximated; complex customized spawners can differ from native behavior. Trial spawners, vault player interaction and natural mob spawning retain their native player requirements. Other plugins that change spawn behavior should be tested together with ChunkLoader.
 
-To provide a correctly positioned unspawned snapshot to spawner listeners, the simulated `SpawnerSpawnEvent` is dispatched during the earliest creature-spawn event phase. Its cancellation cancels the creature event before insertion. This public-API event nesting differs from native event dispatch ordering; other plugins depending on exact nested event order should be integration-tested.
+To provide a correctly positioned unspawned snapshot to spawner listeners, the simulated `SpawnerSpawnEvent` is dispatched during the earliest entity-spawn event phase, including creature spawns. Its cancellation cancels the enclosing entity event before insertion. A guard prevents recursive dispatch. This public-API event nesting differs from native event dispatch ordering; other plugins depending on exact nested event order should be integration-tested.
 
 ## Build verification
 

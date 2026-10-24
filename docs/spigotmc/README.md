@@ -8,7 +8,7 @@ The [ChunkLoader icon](assets/chunkloader-icon.png) is a square pixel-art PNG wi
 | --- | --- |
 | Resource title | ChunkLoader - Timed & Infinite Chunk Loaders, Offline Farms |
 | Tagline | Keep chunks, crops, machines and spawners running with timed or infinite loaders. Requires Paper. |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Author | Lino |
 | Native Minecraft version | 26.3 |
 | Tested Minecraft versions | 1.21.11, 26.1.2, 26.2, 26.3; select matching options offered by the form |

@@ -38,7 +38,8 @@ public final class LoaderItems {
             return 0;
         }
         var data = item.getItemMeta().getPersistentDataContainer();
-        if (data.getOrDefault(versionKey, PersistentDataType.INTEGER, 0) != 1) {
+        if (!data.has(versionKey, PersistentDataType.INTEGER) || !data.has(timeKey, PersistentDataType.LONG)
+                || data.getOrDefault(versionKey, PersistentDataType.INTEGER, 0) != 1) {
             return 0;
         }
         long ticks = data.getOrDefault(timeKey, PersistentDataType.LONG, 0L);

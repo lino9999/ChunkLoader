@@ -30,8 +30,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.SpawnerSpawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
@@ -56,6 +56,11 @@ public final class FarmSimulation {
             return;
         }
         clock += elapsedTicks;
+        if (!randomTicks && !spawners) {
+            progress.clear();
+            selectedSpawns.clear();
+            return;
+        }
         List<Chunk> unique = new ArrayList<>();
         Set<ChunkKey> active = new HashSet<>();
         for (Chunk chunk : chunks) {
@@ -82,6 +87,8 @@ public final class FarmSimulation {
             try {
                 if (randomTicks && maxSamplesPerChunk > 0) {
                     randomTicks(chunk, state, elapsed, maxSamplesPerChunk);
+                } else {
+                    state.sampleCredit = 0;
                 }
                 if (spawners) {
                     spawners(chunk, state, (int) elapsed);
@@ -172,12 +179,12 @@ public final class FarmSimulation {
         }
         if (spawner.getDelay() < 0) {
             reset(spawner);
-            spawner.update();
+            spawner.update(false, false);
             return 0;
         }
         if (spawner.getDelay() > 0) {
             spawner.setDelay(Math.max(0, spawner.getDelay() - elapsed));
-            spawner.update();
+            spawner.update(false, false);
             return 0;
         }
         EntitySnapshot snapshot = spawner.getSpawnedEntity();
@@ -191,10 +198,11 @@ public final class FarmSimulation {
         if (spawner.getWorld().getNearbyEntities(area, entity -> entity.getType() == type).size()
                 >= spawner.getMaxNearbyEntities()) {
             reset(spawner);
-            spawner.update();
+            spawner.update(false, false);
             return 0;
         }
         int attempts = Math.min(Math.min(spawner.getSpawnCount(), 16), budget);
+        SpawnRule rule = spawnRule(spawner, snapshot);
         boolean spawned = false;
         for (int attempt = 0; attempt < attempts; attempt++) {
             Location location = spawnLocation(center, range);
@@ -205,7 +213,7 @@ public final class FarmSimulation {
             }
             Entity entity = snapshot == null ? world.createEntity(location, type.getEntityClass())
                     : snapshot.createEntity(world);
-            if (!canSpawn(entity, location, spawnRule(spawner, snapshot))) {
+            if (!canSpawn(entity, location, rule)) {
                 continue;
             }
             if (spawn(entity, location, spawner)) {
@@ -218,21 +226,21 @@ public final class FarmSimulation {
         }
         if (spawned) {
             reset(spawner);
-            spawner.update();
+            spawner.update(false, false);
         }
         return attempts;
     }
 
     private boolean spawn(Entity entity, Location location, CreatureSpawner spawner) {
         if (!spawnEventsRegistered) {
-            plugin.getServer().getPluginManager().registerEvent(CreatureSpawnEvent.class,
+            plugin.getServer().getPluginManager().registerEvent(EntitySpawnEvent.class,
                     new Listener() { }, EventPriority.LOWEST, (listener, event) -> {
-                        if (!(event instanceof CreatureSpawnEvent creatureEvent)) {
+                        if (!(event instanceof EntitySpawnEvent spawnEvent) || event instanceof SpawnerSpawnEvent) {
                             return;
                         }
-                        CreatureSpawner source = pendingSpawns.get(creatureEvent.getEntity());
-                        if (source != null && !new SpawnerSpawnEvent(creatureEvent.getEntity(), source).callEvent()) {
-                            creatureEvent.setCancelled(true);
+                        CreatureSpawner source = pendingSpawns.get(spawnEvent.getEntity());
+                        if (source != null && !new SpawnerSpawnEvent(spawnEvent.getEntity(), source).callEvent()) {
+                            spawnEvent.setCancelled(true);
                         }
                     }, plugin, false);
             spawnEventsRegistered = true;

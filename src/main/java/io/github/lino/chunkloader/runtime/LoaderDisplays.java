@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -86,7 +87,7 @@ public final class LoaderDisplays {
     public void drawBorders() {
         for (UUID playerId : Set.copyOf(borders)) {
             Player player = Bukkit.getPlayer(playerId);
-            if (player == null) {
+            if (player == null || !player.hasPermission("chunkloader.show")) {
                 borders.remove(playerId);
                 continue;
             }
@@ -97,8 +98,7 @@ public final class LoaderDisplays {
                             && Math.abs((long) chunk.getX() - (origin.getBlockX() >> 4)) <= 8
                             && Math.abs((long) chunk.getZ() - (origin.getBlockZ() >> 4)) <= 8)
                     .sorted(java.util.Comparator.comparingDouble(chunk ->
-                            Math.pow(chunk.getX() * 16.0 + 8 - origin.getX(), 2)
-                                    + Math.pow(chunk.getZ() * 16.0 + 8 - origin.getZ(), 2)))
+                            distanceSquared(chunk.getX(), chunk.getZ(), origin)))
                     .limit(16).toList();
             for (var chunk : nearby) {
                 int x = chunk.getX() << 4;
@@ -117,9 +117,20 @@ public final class LoaderDisplays {
         player.spawnParticle(Particle.HAPPY_VILLAGER, x, y, z, 1, 0, 0, 0, 0);
     }
 
+    private double distanceSquared(int chunkX, int chunkZ, Location origin) {
+        double x = chunkX * 16.0 + 8 - origin.getX();
+        double z = chunkZ * 16.0 + 8 - origin.getZ();
+        return x * x + z * z;
+    }
+
     public void close() {
-        holograms.values().forEach(TextDisplay::remove);
-        holograms.clear();
+        for (UUID id : Set.copyOf(holograms.keySet())) {
+            try {
+                remove(id);
+            } catch (RuntimeException error) {
+                plugin.getLogger().log(Level.WARNING, "Could not remove loader display " + id, error);
+            }
+        }
         borders.clear();
     }
 }

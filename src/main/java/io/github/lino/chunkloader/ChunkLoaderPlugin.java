@@ -32,6 +32,7 @@ public final class ChunkLoaderPlugin extends JavaPlugin {
     private LoaderMenus menus;
     private FarmSimulation simulation;
     private long ticks;
+    private long lastSimulationTick;
 
     @Override
     public void onEnable() {
@@ -67,12 +68,15 @@ public final class ChunkLoaderPlugin extends JavaPlugin {
     private void tick() {
         ticks++;
         tickets.pump(settings.maxChunksPerTick());
+        loaders.pollPersistence();
         if (ticks % settings.simulationInterval() == 0) {
-            simulation.tick(tickets.activeChunks(), settings.simulationInterval(), settings.randomTicks(),
+            int elapsed = (int) Math.min(200, ticks - lastSimulationTick);
+            lastSimulationTick = ticks;
+            simulation.tick(tickets.activeChunks(), elapsed, settings.randomTicks(),
                     settings.spawners(), settings.maxRandomSamples(), settings.maxChunksPerTick());
         }
         if (ticks % 20 == 0) {
-            loaders.elapse(20);
+            loaders.elapse();
             displays.update();
         }
         if (ticks % settings.borderInterval() == 0) {
@@ -111,22 +115,27 @@ public final class ChunkLoaderPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        Bukkit.getScheduler().cancelTasks(this);
         Bukkit.getServicesManager().unregisterAll(this);
         if (menus != null) {
-            menus.close();
-        }
-        if (displays != null) {
-            displays.close();
+            closeComponent("menus", menus::close);
         }
         if (loaders != null) {
-            try {
-                loaders.close();
-            } catch (Exception error) {
-                getLogger().log(Level.SEVERE, "Could not finish saving loaders", error);
-            }
+            closeComponent("loader storage", loaders::close);
+        }
+        if (displays != null) {
+            closeComponent("displays", displays::close);
         }
         if (tickets != null) {
-            tickets.close();
+            closeComponent("chunk tickets", tickets::close);
+        }
+    }
+
+    private void closeComponent(String name, AutoCloseable component) {
+        try {
+            component.close();
+        } catch (Exception error) {
+            getLogger().log(Level.SEVERE, "Could not close " + name, error);
         }
     }
 

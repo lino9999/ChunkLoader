@@ -33,7 +33,7 @@ A lightweight Paper plugin by **Lino**, with timed and infinite chunk loaders, e
 ## Installation
 
 1. Use Paper **1.21.11 through 26.3**. Run Java **21** for 1.21.11 and Java **25** for 26.x.
-2. Download `ChunkLoader-1.0.0.jar` from the [latest release](https://github.com/lino9999/ChunkLoader/releases/latest), or build it locally.
+2. Download `ChunkLoader-1.0.1.jar` from the [latest release](https://github.com/lino9999/ChunkLoader/releases/latest), or build it locally.
 3. Put the JAR in your server's `plugins` directory and restart the server.
 4. Optionally install [Vault](https://github.com/MilkBowl/Vault) and an economy plugin for money refueling.
 5. Give yourself a loader: `/chunkloader give YourName 2h`.
@@ -42,7 +42,7 @@ Spigot, Bukkit-only servers, Fabric, Forge, Bedrock servers, and Folia are outsi
 
 ## Using a loader
 
-Place the supplied block to load its chunk. The default block is an end portal frame; ordinary, untagged blocks do not become loaders.
+Place the supplied block to load its chunk. The default block is an end portal frame; ordinary, untagged blocks do not become loaders. Loader items must create a single block; multi-block placements are rejected.
 
 Right-click with an empty hand to open the menu. Buy an additional **30 minutes** for **10 XP levels** or **5000 currency units** by default. Right-click while holding another loader to merge its remaining time. Merging an infinite item makes the placed loader infinite. Creative players can refuel without consuming items or paying.
 
@@ -127,7 +127,7 @@ This is a fresh implementation. Old plugin JARs, database formats, legacy item t
 ./mvnw package
 ```
 
-On Windows, use `mvnw.cmd package`. Set `JAVA_HOME` to a JDK 21 or 25 installation. The same Java 21 bytecode runs across the supported server versions. The production JAR is written to `target/ChunkLoader-1.0.0.jar`. CI builds the plugin on both Java versions. Test sources, test tooling, and local test servers were removed after the recorded compatibility checks.
+On Windows, use `mvnw.cmd package`. Set `JAVA_HOME` to a JDK 21 or 25 installation. The same Java 21 bytecode runs across the supported server versions. The production JAR is written to `target/ChunkLoader-1.0.1.jar`. CI builds the plugin on both Java versions. Test sources, test tooling, and local test servers are excluded from the repository; verification results are recorded in the compatibility guide.
 
 Start with the [architecture](docs/ARCHITECTURE.md), [AI editing guide](docs/AGENTS.md), and [reverse-engineering evidence](docs/REVERSE_ENGINEERING.md). Ready-to-paste English [SpigotMC descriptions and documentation](docs/spigotmc/README.md) are included. Generated files, local tools, and original artifacts are excluded from Git and AI searches.
 

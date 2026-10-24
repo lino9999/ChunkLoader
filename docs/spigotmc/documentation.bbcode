@@ -1,11 +1,11 @@
 [CENTER][SIZE=6][B][COLOR=#e6a23c]ChunkLoader Documentation[/COLOR][/B][/SIZE]
-[B]Version 1.0.0 | Author: Lino | Paper 1.21.11 - 26.3[/B]
+[B]Version 1.0.1 | Author: Lino | Paper 1.21.11 - 26.3[/B]
 [URL=https://github.com/lino9999/ChunkLoader/releases/latest]Download[/URL] | [URL=https://github.com/lino9999/ChunkLoader]Source[/URL] | [URL=https://github.com/lino9999/ChunkLoader/issues]Support[/URL][/CENTER]
 
 [SIZE=5][B]1. Requirements and installation[/B][/SIZE]
 [LIST=1]
 [*]Use Paper 1.21.11 through 26.3. Use Java 21 for 1.21.11 or Java 25 for 26.x.
-[*]Download [B]ChunkLoader-1.0.0.jar[/B] from the GitHub release.
+[*]Download [B]ChunkLoader-1.0.1.jar[/B] from the GitHub release.
 [*]Stop the server and place the JAR in its [ICODE]plugins[/ICODE] folder.
 [*]For money refueling, optionally install Vault and an economy plugin that registers a Vault economy provider.
 [*]Start the server. Configuration files are created under [ICODE]plugins/ChunkLoader/[/ICODE].
@@ -19,7 +19,7 @@
 
 [SIZE=5][B]2. Loader operation[/B][/SIZE]
 [LIST]
-[*][B]Place:[/B] Place an item issued by ChunkLoader. The placer becomes its owner. Ordinary untagged end portal frames do not become loaders.
+[*][B]Place:[/B] Place an item issued by ChunkLoader. The placer becomes its owner. Ordinary untagged end portal frames do not become loaders. Items that place several blocks at once cannot be used as loaders.
 [*][B]Coverage:[/B] One loader keeps its own 16 x 16 chunk active across the world's full build height. Several loaders in one chunk share a ticket and retain separate timers.
 [*][B]Manage:[/B] Right-click without holding another loader to open the management menu.
 [*][B]Buy time:[/B] Use the XP or economy button. The default upgrade is 30 minutes for 10 XP levels or 5000 currency units.

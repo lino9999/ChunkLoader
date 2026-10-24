@@ -119,8 +119,11 @@ public final class LoaderMenus implements Listener {
             return;
         }
         int slot = event.getRawSlot();
+        if (menu.inventory.getItem(slot) == null) {
+            return;
+        }
         Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!player.isOnline() || player.getOpenInventory().getTopInventory() != menu.inventory) {
+            if (!player.isOnline() || player.getOpenInventory().getTopInventory().getHolder() != menu) {
                 return;
             }
             if (menu.type == Type.SETTINGS) {
@@ -166,6 +169,10 @@ public final class LoaderMenus implements Listener {
     }
 
     private void buyTime(Player player, Loader loader, boolean xp) {
+        if (!plugin.loaders().isPresent(loader)) {
+            plugin.messages().send(player, "not-found");
+            return;
+        }
         if (loader.isInfinite()) {
             plugin.messages().send(player, "infinite");
             return;

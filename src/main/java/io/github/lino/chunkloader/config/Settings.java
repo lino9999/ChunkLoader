@@ -19,17 +19,26 @@ public record Settings(Material material, int maxPerPlayer, int maxTotal, boolea
         if (fuelTicks <= 0) {
             throw new IllegalArgumentException("fuel.duration must be finite and positive");
         }
-        double cost = config.getDouble("fuel.economy.cost", 5000);
+        Object configuredCost = config.get("fuel.economy.cost");
+        if (!(configuredCost instanceof Number number)) {
+            throw new IllegalArgumentException("fuel.economy.cost must be a number");
+        }
+        double cost = number.doubleValue();
         if (!Double.isFinite(cost) || cost < 0) {
             throw new IllegalArgumentException("fuel.economy.cost must be finite and nonnegative");
         }
+        Object worlds = config.get("loader.disabled-worlds");
+        if (!(worlds instanceof List<?> names)
+                || names.stream().anyMatch(name -> !(name instanceof String text) || text.isBlank())) {
+            throw new IllegalArgumentException("loader.disabled-worlds must be a list of world names");
+        }
         return new Settings(material, integer(config, "loader.max-per-player", 1, 100000),
-                integer(config, "loader.max-total", 1, 100000), config.getBoolean("loader.allow-breaking"),
-                List.copyOf(config.getStringList("loader.disabled-worlds")), fuelTicks,
-                config.getBoolean("fuel.xp.enabled"), integer(config, "fuel.xp.levels", 0, 100000),
-                config.getBoolean("fuel.economy.enabled"), cost, config.getBoolean("display.holograms"),
-                config.getBoolean("display.particles"), integer(config, "display.borders-interval-ticks", 5, 200),
-                config.getBoolean("simulation.random-ticks"), config.getBoolean("simulation.spawners"),
+                integer(config, "loader.max-total", 1, 100000), bool(config, "loader.allow-breaking"),
+                names.stream().map(String.class::cast).distinct().toList(), fuelTicks,
+                bool(config, "fuel.xp.enabled"), integer(config, "fuel.xp.levels", 0, 100000),
+                bool(config, "fuel.economy.enabled"), cost, bool(config, "display.holograms"),
+                bool(config, "display.particles"), integer(config, "display.borders-interval-ticks", 5, 200),
+                bool(config, "simulation.random-ticks"), bool(config, "simulation.spawners"),
                 integer(config, "simulation.interval-ticks", 1, 20),
                 integer(config, "simulation.max-chunks-per-tick", 1, 256),
                 integer(config, "simulation.max-random-samples-per-chunk", 1, 65536),
@@ -37,10 +46,22 @@ public record Settings(Material material, int maxPerPlayer, int maxTotal, boolea
     }
 
     private static int integer(FileConfiguration config, String path, int minimum, int maximum) {
-        int value = config.getInt(path, minimum - 1);
+        Object configured = config.get(path);
+        if (!(configured instanceof Integer || configured instanceof Long)) {
+            throw new IllegalArgumentException(path + " must be a whole number");
+        }
+        long value = ((Number) configured).longValue();
         if (value < minimum || value > maximum) {
             throw new IllegalArgumentException(path + " must be between " + minimum + " and " + maximum);
         }
-        return value;
+        return (int) value;
+    }
+
+    private static boolean bool(FileConfiguration config, String path) {
+        Object value = config.get(path);
+        if (!(value instanceof Boolean enabled)) {
+            throw new IllegalArgumentException(path + " must be true or false");
+        }
+        return enabled;
     }
 }

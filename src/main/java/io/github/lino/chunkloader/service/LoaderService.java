@@ -14,9 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
 import java.util.logging.Level;
 import org.bukkit.Bukkit;
@@ -33,30 +37,30 @@ public final class LoaderService implements ChunkLoaderApi {
     private final Map<UUID, Loader> loaders = new LinkedHashMap<>();
     private final Map<BlockPosition, UUID> positions = new HashMap<>();
     private final Map<UUID, Integer> ownerCounts = new HashMap<>();
+    private final Map<UUID, Long> countedAt = new HashMap<>();
     private final List<BiPredicate<Loader, UUID>> accessChecks = new ArrayList<>();
     private final ExecutorService writer = Executors.newSingleThreadExecutor(Thread.ofPlatform().name("ChunkLoader-storage").factory());
-    private boolean saving;
+    private CompletableFuture<Void> saveTask;
     private boolean dirty;
-    private volatile boolean storageHealthy = true;
+    private boolean storageHealthy = true;
+    private boolean closed;
 
     public LoaderService(ChunkLoaderPlugin plugin, LoaderStore store, ChunkTickets tickets) throws IOException {
         this.plugin = plugin;
         this.store = store;
         this.tickets = tickets;
         for (Loader loader : store.load()) {
-            if (!loader.isExpired()) {
-                Material material = Material.matchMaterial(loader.material());
-                if (material == null || !material.isBlock()) {
-                    throw new IOException("Unknown loader block material: " + loader.material());
-                }
-                World world = Bukkit.getWorld(loader.position().worldId());
-                if (Math.abs((long) loader.position().x()) > 30000000 || Math.abs((long) loader.position().z()) > 30000000
-                        || world != null && (loader.position().y() < world.getMinHeight()
-                        || loader.position().y() >= world.getMaxHeight())) {
-                    throw new IOException("Loader position is outside the world bounds: " + loader.position());
-                }
-                index(loader);
+            Material material = Material.matchMaterial(loader.material());
+            if (material == null || !material.isBlock() || !material.isItem() || !material.isSolid()) {
+                throw new IOException("Unknown loader block material: " + loader.material());
             }
+            World world = Bukkit.getWorld(loader.position().worldId());
+            if (Math.abs((long) loader.position().x()) > 30000000 || Math.abs((long) loader.position().z()) > 30000000
+                    || world != null && (loader.position().y() < world.getMinHeight()
+                    || loader.position().y() >= world.getMaxHeight())) {
+                throw new IOException("Loader position is outside the world bounds: " + loader.position());
+            }
+            index(new Loader(loader.id(), loader.ownerId(), loader.position(), loader.remainingTicks(), material.name()));
         }
     }
 
@@ -64,11 +68,14 @@ public final class LoaderService implements ChunkLoaderApi {
         loaders.put(loader.id(), loader);
         positions.put(loader.position(), loader.id());
         ownerCounts.merge(loader.ownerId(), 1, Integer::sum);
+        countedAt.put(loader.id(), tickets.currentTick());
         tickets.retain(loader.position());
     }
 
     public boolean canPlace(Player player, World world) {
-        return storageHealthy && loaders.size() < plugin.settings().maxTotal()
+        mainThread();
+        finishSave();
+        return !closed && storageHealthy && loaders.size() < plugin.settings().maxTotal()
                 && !plugin.settings().disabledWorlds().contains(world.getName())
                 && (player.hasPermission("chunkloader.bypass")
                 || ownerCounts.getOrDefault(player.getUniqueId(), 0) < plugin.settings().maxPerPlayer());
@@ -77,7 +84,8 @@ public final class LoaderService implements ChunkLoaderApi {
     @Override
     public Loader create(UUID owner, BlockPosition position, long ticks, String material) {
         mainThread();
-        if (!storageHealthy || positions.containsKey(position) || loaders.size() >= plugin.settings().maxTotal()) {
+        finishSave();
+        if (closed || !storageHealthy || positions.containsKey(position) || loaders.size() >= plugin.settings().maxTotal()) {
             throw new IllegalStateException("Loader cannot be created at this location");
         }
         Material type = Material.matchMaterial(material);
@@ -89,6 +97,9 @@ public final class LoaderService implements ChunkLoaderApi {
                 || Math.abs((long) position.x()) > 30000000 || Math.abs((long) position.z()) > 30000000
                 || !world.isChunkLoaded(position.chunkX(), position.chunkZ())) {
             throw new IllegalArgumentException("Loader position must be inside a loaded world chunk");
+        }
+        if (world.getBlockAt(position.x(), position.y(), position.z()).getType() != type) {
+            throw new IllegalArgumentException("The loader block does not match its material");
         }
         Loader loader = new Loader(UUID.randomUUID(), owner, position, ticks, type.name());
         if (loader.isExpired()) {
@@ -103,15 +114,17 @@ public final class LoaderService implements ChunkLoaderApi {
     @Override
     public Loader addTime(UUID id, long ticks) {
         mainThread();
-        if (!storageHealthy) {
+        finishSave();
+        if (closed || !storageHealthy) {
             throw new IllegalStateException("Storage is unavailable");
         }
-        Loader previous = loaders.get(id);
-        if (previous == null) {
+        Loader previous = get(id);
+        if (previous == null || previous.isExpired() || !isPresent(previous)) {
             throw new IllegalStateException("Loader no longer exists");
         }
         Loader updated = previous.addTicks(ticks);
         loaders.put(id, updated);
+        countedAt.put(id, tickets.currentTick());
         dirty = true;
         saveAsync();
         return updated;
@@ -120,89 +133,151 @@ public final class LoaderService implements ChunkLoaderApi {
     @Override
     public boolean remove(UUID id, boolean dropItem) {
         mainThread();
+        if (closed) {
+            throw new IllegalStateException("Loader service is closed");
+        }
+        return remove(id, dropItem, true);
+    }
+
+    public boolean discard(UUID id) {
+        mainThread();
+        if (closed) {
+            return false;
+        }
+        return remove(id, false, false);
+    }
+
+    private boolean remove(UUID id, boolean dropItem, boolean changeBlock) {
+        Loader current = get(id);
         Loader loader = loaders.remove(id);
         if (loader == null) {
             return false;
         }
         positions.remove(loader.position());
         ownerCounts.computeIfPresent(loader.ownerId(), (key, count) -> count <= 1 ? null : count - 1);
-        World world = Bukkit.getWorld(loader.position().worldId());
-        if (world != null && world.isChunkLoaded(loader.position().chunkX(), loader.position().chunkZ())) {
-            Block block = world.getBlockAt(loader.position().x(), loader.position().y(), loader.position().z());
-            if (block.getType().name().equals(loader.material())) {
+        countedAt.remove(id);
+        try {
+            World world = Bukkit.getWorld(loader.position().worldId());
+            if (changeBlock && world != null && isPresent(loader)) {
+                Block block = world.getBlockAt(loader.position().x(), loader.position().y(), loader.position().z());
                 block.setType(Material.AIR, false);
+                if (dropItem && !current.isExpired()) {
+                    world.dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), plugin.items().create(
+                            Material.valueOf(loader.material()), current.remainingTicks(), 1, plugin.messages()));
+                }
+                if (plugin.settings().particles()) {
+                    world.spawnParticle(Particle.CLOUD, block.getLocation().add(0.5, 0.5, 0.5), 12, 0.3, 0.3, 0.3, 0.01);
+                }
             }
-            if (dropItem && !loader.isExpired()) {
-                world.dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), plugin.items().create(
-                        Material.valueOf(loader.material()), loader.remainingTicks(), 1, plugin.messages()));
-            }
-            if (plugin.settings().particles()) {
-                world.spawnParticle(Particle.CLOUD, block.getLocation().add(0.5, 0.5, 0.5), 12, 0.3, 0.3, 0.3, 0.01);
+        } finally {
+            dirty = true;
+            try {
+                tickets.release(loader.position());
+            } finally {
+                try {
+                    plugin.displays().remove(loader.id());
+                } finally {
+                    saveAsync();
+                }
             }
         }
-        tickets.release(loader.position());
-        plugin.displays().remove(loader.id());
-        dirty = true;
-        saveAsync();
         return true;
     }
 
-    public void elapse(long ticks) {
+    public void elapse() {
         mainThread();
         for (Loader loader : List.copyOf(loaders.values())) {
-            if (!tickets.active(loader.position())) {
-                continue;
+            try {
+                elapse(loader);
+            } catch (RuntimeException error) {
+                plugin.getLogger().log(Level.WARNING, "Could not update loader " + loader.id(), error);
             }
-            World world = Bukkit.getWorld(loader.position().worldId());
-            if (world == null) {
-                continue;
-            }
-            Block block = world.getBlockAt(loader.position().x(), loader.position().y(), loader.position().z());
-            if (!block.getType().name().equals(loader.material())) {
-                remove(loader.id(), false);
-                continue;
-            }
-            Loader updated = loader.tick(ticks);
-            if (updated.isExpired()) {
-                remove(loader.id(), false);
-            } else if (!updated.equals(loader)) {
-                loaders.put(loader.id(), updated);
-                dirty = true;
-            }
+        }
+    }
+
+    private void elapse(Loader loader) {
+        if (!tickets.active(loader.position())) {
+            return;
+        }
+        World world = Bukkit.getWorld(loader.position().worldId());
+        if (world == null) {
+            return;
+        }
+        if (loader.position().y() < world.getMinHeight() || loader.position().y() >= world.getMaxHeight()) {
+            plugin.getLogger().warning("Removing a loader outside the current world height: " + loader.position());
+            remove(loader.id(), false);
+            return;
+        }
+        Block block = world.getBlockAt(loader.position().x(), loader.position().y(), loader.position().z());
+        if (!block.getType().name().equals(loader.material())) {
+            remove(loader.id(), false);
+            return;
+        }
+        Loader updated = current(loader);
+        if (updated.isExpired()) {
+            remove(loader.id(), false);
+        } else if (!updated.equals(loader)) {
+            loaders.put(loader.id(), updated);
+            countedAt.put(loader.id(), tickets.currentTick());
+            dirty = true;
         }
     }
 
     @Override
     public List<Loader> loaders() {
         mainThread();
-        return List.copyOf(loaders.values());
+        return snapshot();
     }
 
     @Override
     public Loader find(BlockPosition position) {
         mainThread();
-        return loaders.get(positions.get(position));
+        return get(positions.get(position));
     }
 
     @Override
     public Loader get(UUID id) {
         mainThread();
-        return loaders.get(id);
+        Loader loader = loaders.get(id);
+        return loader == null ? null : current(loader);
+    }
+
+    private Loader current(Loader loader) {
+        long since = tickets.activeSince(loader.position());
+        if (since < 0 || loader.isInfinite()) {
+            return loader;
+        }
+        long elapsed = tickets.currentTick() - Math.max(since, countedAt.getOrDefault(loader.id(), tickets.currentTick()));
+        return elapsed > 0 ? loader.tick(elapsed) : loader;
+    }
+
+    private List<Loader> snapshot() {
+        return loaders.values().stream().map(this::current).toList();
+    }
+
+    public boolean isPresent(Loader loader) {
+        mainThread();
+        World world = Bukkit.getWorld(loader.position().worldId());
+        return world != null && loader.position().y() >= world.getMinHeight()
+                && loader.position().y() < world.getMaxHeight()
+                && world.isChunkLoaded(loader.position().chunkX(), loader.position().chunkZ())
+                && world.getBlockAt(loader.position().x(), loader.position().y(), loader.position().z()).getType().name().equals(loader.material());
     }
 
     @Override
     public boolean hasAccess(Loader loader, UUID player) {
         mainThread();
-        if (!loaders.containsKey(loader.id())) {
+        Loader registered = get(loader.id());
+        if (closed || registered == null || registered.isExpired()) {
             return false;
         }
-        if (loader.ownerId().equals(player)) {
+        if (registered.ownerId().equals(player)) {
             return true;
         }
         for (BiPredicate<Loader, UUID> check : List.copyOf(accessChecks)) {
             try {
-                if (check.test(loader, player)) {
-                    return true;
+                if (check.test(registered, player)) {
+                    return loaders.containsKey(registered.id());
                 }
             } catch (RuntimeException error) {
                 plugin.getLogger().log(Level.WARNING, "An access check failed", error);
@@ -212,13 +287,18 @@ public final class LoaderService implements ChunkLoaderApi {
     }
 
     public boolean hasAccess(Loader loader, Player player) {
-        return player.hasPermission("chunkloader.use") && (player.hasPermission("chunkloader.bypass")
+        mainThread();
+        Loader registered = get(loader.id());
+        return !closed && registered != null && !registered.isExpired() && player.hasPermission("chunkloader.use") && (player.hasPermission("chunkloader.bypass")
                 || hasAccess(loader, player.getUniqueId()));
     }
 
     @Override
     public AutoCloseable registerAccessCheck(BiPredicate<Loader, UUID> check) {
         mainThread();
+        if (closed) {
+            throw new IllegalStateException("Loader service is closed");
+        }
         accessChecks.add(Objects.requireNonNull(check));
         return () -> {
             mainThread();
@@ -228,49 +308,69 @@ public final class LoaderService implements ChunkLoaderApi {
 
     public void saveAsync() {
         mainThread();
-        if (saving || !dirty) {
+        finishSave();
+        if (closed || saveTask != null || !dirty && storageHealthy) {
             return;
         }
-        saving = true;
         dirty = false;
-        List<Loader> snapshot = List.copyOf(loaders.values());
-        writer.submit(() -> {
+        List<Loader> snapshot = snapshot();
+        saveTask = CompletableFuture.runAsync(() -> {
             try {
                 store.save(snapshot);
-                storageHealthy = true;
             } catch (IOException error) {
-                storageHealthy = false;
-                plugin.getLogger().log(Level.SEVERE, "Could not save loaders. Check disk space and permissions", error);
-            } finally {
-                if (plugin.isEnabled()) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        saving = false;
-                        if (!storageHealthy) {
-                            dirty = true;
-                        } else {
-                            saveAsync();
-                        }
-                    });
-                }
+                throw new CompletionException(error);
             }
-        });
+        }, writer);
+    }
+
+    private void finishSave() {
+        if (saveTask == null || !saveTask.isDone()) {
+            return;
+        }
+        try {
+            saveTask.join();
+            storageHealthy = true;
+        } catch (CompletionException error) {
+            storageHealthy = false;
+            dirty = true;
+            plugin.getLogger().log(Level.SEVERE, "Could not save loaders. Check disk space and permissions", error.getCause());
+        } finally {
+            saveTask = null;
+        }
+    }
+
+    public void pollPersistence() {
+        mainThread();
+        boolean completed = saveTask != null && saveTask.isDone();
+        finishSave();
+        if (completed && dirty && storageHealthy && !closed) {
+            saveAsync();
+        }
     }
 
     public void close() throws IOException {
         mainThread();
-        List<Loader> snapshot = List.copyOf(loaders.values());
-        writer.submit(() -> {
+        if (closed) {
+            return;
+        }
+        elapse();
+        closed = true;
+        accessChecks.clear();
+        List<Loader> snapshot = snapshot();
+        var finalWrite = writer.submit(() -> {
             try {
                 store.save(snapshot);
             } catch (IOException error) {
-                plugin.getLogger().log(Level.SEVERE, "Final loader save failed", error);
+                throw new CompletionException(error);
             }
         });
         writer.shutdown();
         try {
-            if (!writer.awaitTermination(30, TimeUnit.SECONDS)) {
-                throw new IOException("Timed out waiting for the final loader save");
-            }
+            finalWrite.get(30, TimeUnit.SECONDS);
+        } catch (ExecutionException error) {
+            throw new IOException("Final loader save failed", error.getCause());
+        } catch (TimeoutException error) {
+            throw new IOException("Timed out waiting for the final loader save", error);
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             throw new IOException("Interrupted while saving loaders", error);
