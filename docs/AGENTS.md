@@ -16,6 +16,6 @@ Read `docs/ARCHITECTURE.md`, choose files from its concern table and open only r
 
 ## Verify efficiently
 
-Run `./mvnw -B verify` on Unix or `.\mvnw.cmd -B verify` on Windows with a JDK installed. Use `-Dtest=ClassName` for focused iteration, then run the full required check after related changes. Tests belong under matching packages in `src/test/java/`. Add tests for meaningful lifecycle, arithmetic, persistence or compatibility failures; do not mirror trivial implementation details.
+Run `./mvnw -B package` on Unix or `.\mvnw.cmd -B package` on Windows with a JDK installed. This repository intentionally excludes test sources and runtime test tooling at the owner's request. Use targeted compilation and artifact inspection for routine edits; do not claim that a build alone proves server behavior. Keep the historical compatibility record distinct from verification of later changes.
 
 CI checks Java 21 and 25. Runtime integration establishes server behavior; a build alone cannot prove Minecraft compatibility. Do not commit original/decompiled code, downloads, worlds, logs or build artifacts. Update architecture documentation when module boundaries or invariants change.

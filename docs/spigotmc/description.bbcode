@@ -1,0 +1,63 @@
+[CENTER][SIZE=7][B][COLOR=#e6a23c]ChunkLoader[/COLOR][/B][/SIZE]
+[SIZE=4]Keep your chunks active. Keep your farms working.[/SIZE]
+[B]Timed and infinite chunk loaders for Paper[/B]
+Minecraft 1.21.11 - 26.3 | XP and Vault economy | Built-in holograms
+[SIZE=3]Created by [B]Lino[/B][/SIZE]
+
+[URL=https://github.com/lino9999/ChunkLoader/releases/latest][B]DOWNLOAD[/B][/URL]  |  [URL=https://github.com/lino9999/ChunkLoader][B]SOURCE CODE[/B][/URL]  |  [URL=https://github.com/lino9999/ChunkLoader/issues][B]SUPPORT[/B][/URL][/CENTER]
+
+[SIZE=5][B][COLOR=#e6a23c]Your farms, ready when you return[/COLOR][/B][/SIZE]
+ChunkLoader gives players a simple way to keep a Minecraft chunk running without staying nearby. Place a loader, manage its remaining time through an inventory menu, and refuel it with experience levels, money, or another loader item.
+
+Use temporary loaders for a survival economy or infinite loaders for permanent infrastructure. Each loader keeps one complete 16 x 16 chunk active, including the full vertical build area. Machines continue working, crops receive Paper's native random ticks, and inactive standard spawners can operate through ChunkLoader's farm simulation.
+
+[SIZE=5][B][COLOR=#e6a23c]Features[/COLOR][/B][/SIZE]
+[LIST]
+[*][B]Timed or infinite loaders[/B] - Issue durations such as 30m, 2h, 1d, or infinite.
+[*][B]Three ways to refuel[/B] - Spend XP levels, use an optional Vault economy, or merge another loader's time.
+[*][B]Simple management menus[/B] - Right-click to manage a loader; left-click to confirm removal.
+[*][B]Offline farm operation[/B] - Keep furnaces, hoppers, redstone, crops, and supported mob spawners working without nearby players.
+[*][B]Native floating text[/B] - Display the remaining time above each loader with no hologram plugin required.
+[*][B]Ownership and limits[/B] - Control who can manage loaders, limit placements per player, and restrict worlds.
+[*][B]Block protection[/B] - Protect registered loaders against explosions, pistons, fire, fluid replacement, and entity changes.
+[*][B]Chunk visualization[/B] - Show personal particles around nearby loader chunks without loading extra terrain.
+[*][B]Reliable overlap handling[/B] - Several loaders can share a chunk without removing each other's chunk ticket.
+[*][B]Persistent data[/B] - Retain ownership and remaining time across restarts with validated JSON and atomic backups.
+[*][B]Server-friendly work budgets[/B] - Bound supplemental farm work and distribute it between active chunks.
+[*][B]Open source[/B] - MIT licensed, with a public API for other plugins to grant shared loader access.
+[/LIST]
+
+[SIZE=5][B][COLOR=#e6a23c]Get started in a minute[/COLOR][/B][/SIZE]
+[LIST=1]
+[*]Install the JAR on a supported Paper server and restart.
+[*]Run [ICODE]/chunkloader give YourName 2h[/ICODE] as an operator or from the console.
+[*]Place the supplied loader block in the chunk you want to keep active.
+[*]Right-click it to add time, or use [ICODE]/chunkloader show[/ICODE] to view nearby loader chunks.
+[/LIST]
+
+By default, one purchase adds [B]30 minutes[/B] for [B]10 XP levels[/B] or [B]5000 currency units[/B]. Prices, duration, material, limits, messages, and display options are configurable. Money purchases require Vault and an economy provider; XP and item refueling work without them.
+
+[SIZE=5][B][COLOR=#e6a23c]Commands at a glance[/COLOR][/B][/SIZE]
+[CODE]/chunkloader help
+/chunkloader show
+/chunkloader list [page]
+/chunkloader give <player|all|@a> <duration> [amount]
+/chunkloader reload
+/chunkloader settings[/CODE]
+Aliases: [B]/cl[/B] and [B]/cloader[/B]. Permissions use the [B]chunkloader.[/B] prefix. Players can manage their own loaders; administrators can manage all loaders.
+
+[SIZE=5][B][COLOR=#e6a23c]Requirements and compatibility[/COLOR][/B][/SIZE]
+[LIST]
+[*][B]Server:[/B] Paper 1.21.11 through 26.3. Paper is required; Spigot-only servers and Folia are not supported.
+[*][B]Java:[/B] Java 21 for Minecraft 1.21.11; Java 25 for Minecraft 26.x.
+[*][B]Optional:[/B] Vault plus a supported economy provider for money refueling.
+[*][B]Verified builds:[/B] Paper 1.21.11/132, 26.1.2/74, 26.2/134, and 26.3/218.
+[/LIST]
+
+For operation while nobody is connected, set [ICODE]pause-when-empty-seconds=-1[/ICODE] in [ICODE]server.properties[/ICODE]. Timers pause when the server or the loader's world is offline. Each loader covers one chunk; it does not create a configurable loading radius.
+
+Custom spawner rules and plugins that depend on exact native event ordering may behave differently with the public-API spawner simulation. Natural mob spawning, trial spawners, and farms that require player interaction retain Minecraft's own requirements. Existing data and items from other loader plugins are not imported automatically.
+
+[CENTER][URL=https://github.com/lino9999/ChunkLoader/releases/latest][B][SIZE=5]Download ChunkLoader[/SIZE][/B][/URL]
+[URL=https://github.com/lino9999/ChunkLoader/blob/main/README.md]Read the full guide[/URL]  |  [URL=https://github.com/lino9999/ChunkLoader/blob/main/docs/COMPATIBILITY.md]Compatibility details[/URL]  |  [URL=https://github.com/lino9999/ChunkLoader/issues]Report an issue[/URL]
+[SIZE=2]ChunkLoader by Lino - MIT License[/SIZE][/CENTER]

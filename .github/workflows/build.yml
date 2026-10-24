@@ -28,8 +28,8 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
-      - name: Verify
-        run: bash ./mvnw -B --no-transfer-progress verify
+      - name: Build
+        run: bash ./mvnw -B --no-transfer-progress package
       - name: Upload plugin
         uses: actions/upload-artifact@v7
         with:

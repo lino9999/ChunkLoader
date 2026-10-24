@@ -1,6 +1,0 @@
-name: ChunkLoaderIntegration
-version: 1.0.0
-main: io.github.lino.chunkloader.testing.IntegrationPlugin
-api-version: '1.21.11'
-author: Lino
-depend: [ChunkLoader]

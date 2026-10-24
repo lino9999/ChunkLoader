@@ -13,7 +13,7 @@ The isolated runtime suite was executed on 24 October 2026 using official Paper 
 | 26.2 | 134 stable | Microsoft OpenJDK 25.0.1+8-LTS | Pass: 22 assertions | Pass: 5 assertions |
 | 26.3 | 218 stable | Microsoft OpenJDK 25.0.1+8-LTS | Pass: 22 assertions | Pass: 5 assertions |
 
-All 108 runtime assertions passed across the eight boots, and the main project passed 56 unit tests. No ChunkLoader event or farm-simulation errors were recorded in the final run. The final JAR used for restart verification has SHA-256 `5f961a5cf50142b9469a904a1ac83afb6ce433930af732dc34e89b791f5b03e7`.
+All 108 runtime assertions passed across the eight boots, and the main project passed 56 unit tests before the owner requested removal of test files. No ChunkLoader event or farm-simulation errors were recorded in the final run. The initially verified JAR had SHA-256 `5f961a5cf50142b9469a904a1ac83afb6ce433930af732dc34e89b791f5b03e7`. A later release rebuild can have a different archive hash because packaging timestamps change; its application code is unchanged.
 
 The suite checks the registered API, position lookup, ownership, extension access and unregistration, fuel addition, overlapping ticket references, entity-ticking state, expiration and infinite duration. With no connected players, it verifies wheat growth, furnace smelting, hopper transfer and custom spawner entity snapshots. It cancels initial spawner attempts and verifies that cancellation prevents world insertion, event listeners receive the correct entity position, and creature spawn events carry the `SPAWNER` reason. A second boot verifies persisted infinite-loader restoration, ticket recreation and removal.
 
@@ -35,8 +35,8 @@ Public APIs do not expose every native species-specific spawn predicate, spawn-p
 
 To provide a correctly positioned unspawned snapshot to spawner listeners, the simulated `SpawnerSpawnEvent` is dispatched during the earliest creature-spawn event phase. Its cancellation cancels the creature event before insertion. This public-API event nesting differs from native event dispatch ordering; other plugins depending on exact nested event order should be integration-tested.
 
-## Reproducing the checks
+## Build verification
 
-See [the integration test instructions](../integration-tests/README.md). The runner creates fresh directories under `.work/integration/`, requires explicit Minecraft EULA acceptance, downloads official builds, checks hashes and retains logs and JSON assertion results. It never deletes or reuses an existing run directory.
+Test sources, runtime test tooling, generated reports, and disposable local servers were removed after the initial verification at the owner's request. The matrix above records completed checks; those checks are not rerun by the current build. Use `./mvnw package` or `.\mvnw.cmd package` to compile and package the plugin. CI performs this build on Java 21 and 25. The Git history retains the original verification tooling.
 
 Official references: [Paper Java requirements](https://docs.papermc.io/paper/getting-started/), [Paper API setup](https://docs.papermc.io/paper/dev/project-setup/), [plugin API version behavior](https://docs.papermc.io/paper/dev/plugin-yml/), [chunk tickets](https://jd.papermc.io/paper/1.21.11/org/bukkit/Chunk.html), [block random ticks](https://jd.papermc.io/paper/1.21.11/org/bukkit/block/Block.html), [spawner player range](https://jd.papermc.io/paper/1.21.11/org/bukkit/spawner/BaseSpawner.html), [official download service](https://docs.papermc.io/misc/downloads-service/).

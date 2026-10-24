@@ -33,7 +33,7 @@ A lightweight Paper plugin by **Lino**, with timed and infinite chunk loaders, e
 ## Installation
 
 1. Use Paper **1.21.11 through 26.3**. Run Java **21** for 1.21.11 and Java **25** for 26.x.
-2. Download a built `ChunkLoader-1.0.0.jar` from the [build artifacts](https://github.com/lino9999/ChunkLoader/actions/workflows/build.yml), or build it locally.
+2. Download `ChunkLoader-1.0.0.jar` from the [latest release](https://github.com/lino9999/ChunkLoader/releases/latest), or build it locally.
 3. Put the JAR in your server's `plugins` directory and restart the server.
 4. Optionally install [Vault](https://github.com/MilkBowl/Vault) and an economy plugin for money refueling.
 5. Give yourself a loader: `/chunkloader give YourName 2h`.
@@ -124,12 +124,12 @@ This is a fresh implementation. Old plugin JARs, database formats, legacy item t
 ## Development
 
 ```sh
-./mvnw verify
+./mvnw package
 ```
 
-On Windows, use `mvnw.cmd verify`. Set `JAVA_HOME` to a JDK 21 or 25 installation. The same Java 21 bytecode runs across the supported server versions. The production JAR is written to `target/ChunkLoader-1.0.0.jar`; the separate integration test plugin must never be installed on a production server.
+On Windows, use `mvnw.cmd package`. Set `JAVA_HOME` to a JDK 21 or 25 installation. The same Java 21 bytecode runs across the supported server versions. The production JAR is written to `target/ChunkLoader-1.0.0.jar`. CI builds the plugin on both Java versions. Test sources, test tooling, and local test servers were removed after the recorded compatibility checks.
 
-Start with the [architecture](docs/ARCHITECTURE.md), [AI editing guide](docs/AGENTS.md), and [reverse-engineering evidence](docs/REVERSE_ENGINEERING.md). Generated files, local tools, original artifacts, and test worlds are excluded from Git and AI searches.
+Start with the [architecture](docs/ARCHITECTURE.md), [AI editing guide](docs/AGENTS.md), and [reverse-engineering evidence](docs/REVERSE_ENGINEERING.md). Ready-to-paste English [SpigotMC descriptions and documentation](docs/spigotmc/README.md) are included. Generated files, local tools, and original artifacts are excluded from Git and AI searches.
 
 ## License
 

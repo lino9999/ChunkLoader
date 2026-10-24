@@ -1,0 +1,193 @@
+[CENTER][SIZE=6][B][COLOR=#e6a23c]ChunkLoader Documentation[/COLOR][/B][/SIZE]
+[B]Version 1.0.0 | Author: Lino | Paper 1.21.11 - 26.3[/B]
+[URL=https://github.com/lino9999/ChunkLoader/releases/latest]Download[/URL] | [URL=https://github.com/lino9999/ChunkLoader]Source[/URL] | [URL=https://github.com/lino9999/ChunkLoader/issues]Support[/URL][/CENTER]
+
+[SIZE=5][B]1. Requirements and installation[/B][/SIZE]
+[LIST=1]
+[*]Use Paper 1.21.11 through 26.3. Use Java 21 for 1.21.11 or Java 25 for 26.x.
+[*]Download [B]ChunkLoader-1.0.0.jar[/B] from the GitHub release.
+[*]Stop the server and place the JAR in its [ICODE]plugins[/ICODE] folder.
+[*]For money refueling, optionally install Vault and an economy plugin that registers a Vault economy provider.
+[*]Start the server. Configuration files are created under [ICODE]plugins/ChunkLoader/[/ICODE].
+[*]As an operator or from the console, run [ICODE]/chunkloader give YourName 2h[/ICODE].
+[/LIST]
+
+[B]Paper is required.[/B] Publishing this resource on SpigotMC does not make it compatible with Spigot-only servers, Bukkit-only servers, Folia, Fabric, Forge, or Bedrock server software.
+
+[B]Empty servers:[/B] Set the following in [ICODE]server.properties[/ICODE] and restart if loaders must continue operating with no connected players:
+[CODE]pause-when-empty-seconds=-1[/CODE]
+
+[SIZE=5][B]2. Loader operation[/B][/SIZE]
+[LIST]
+[*][B]Place:[/B] Place an item issued by ChunkLoader. The placer becomes its owner. Ordinary untagged end portal frames do not become loaders.
+[*][B]Coverage:[/B] One loader keeps its own 16 x 16 chunk active across the world's full build height. Several loaders in one chunk share a ticket and retain separate timers.
+[*][B]Manage:[/B] Right-click without holding another loader to open the management menu.
+[*][B]Buy time:[/B] Use the XP or economy button. The default upgrade is 30 minutes for 10 XP levels or 5000 currency units.
+[*][B]Merge items:[/B] Right-click a placed loader while holding another loader item. One held item is consumed in survival. Its remaining time is added to the placed loader. An infinite item converts a finite loader to infinite.
+[*][B]Infinite loaders:[/B] They never expire and refuse unnecessary fuel purchases or item merging.
+[*][B]Creative mode:[/B] Refueling is free and does not consume held loader items.
+[*][B]Removal:[/B] Left-click to open a confirmation menu. With [ICODE]loader.allow-breaking: true[/ICODE], direct breaking also removes the loader and manual removal returns an item containing the remaining time. With this option false, confirmed removal returns no item.
+[*][B]Expiration:[/B] An expired loader is removed without dropping a replacement item.
+[*][B]Time:[/B] Timers follow server ticks. They pause while the server or world is offline and while the loader's chunk is waiting to activate. Server lag slows countdowns.
+[/LIST]
+
+[SIZE=5][B]3. Commands[/B][/SIZE]
+The root command is [B]/chunkloader[/B]. Aliases [B]/cl[/B] and [B]/cloader[/B] support the same subcommands. Square brackets indicate optional arguments.
+
+[TABLE]
+[TR][TH]Command[/TH][TH]Purpose[/TH][TH]Permission[/TH][/TR]
+[TR][TD]/chunkloader help[/TD][TD]Display command help. Available to everyone and the console.[/TD][TD]None[/TD][/TR]
+[TR][TD]/chunkloader show[/TD][TD]Toggle personal borders around nearby loader chunks. Players only.[/TD][TD]chunkloader.show[/TD][/TR]
+[TR][TD]/chunkloader list [page][/TD][TD]List your loaders, coordinates, IDs, and time. Administrators see all loaders. Players only.[/TD][TD]chunkloader.list[/TD][/TR]
+[TR][TD]/chunkloader give <player|all|@a> <duration> [amount][/TD][TD]Give 1-64 loader items to an online player or every online player. Also available from the console.[/TD][TD]chunkloader.give[/TD][/TR]
+[TR][TD]/chunkloader reload[/TD][TD]Reload configuration and messages. Also available from the console.[/TD][TD]chunkloader.reload[/TD][/TR]
+[TR][TD]/chunkloader settings[/TD][TD]Open the administrator toggle menu. Players only.[/TD][TD]chunkloader.settings[/TD][/TR]
+[/TABLE]
+
+The list defaults to page 1 and shows up to 10 loaders per page. The give amount defaults to 1. If a recipient's inventory is full, overflow items are dropped at that player's location. The [ICODE]all[/ICODE] and [ICODE]@a[/ICODE] targets affect online players only.
+
+[B]Duration syntax[/B]
+[LIST]
+[*][ICODE]90s[/ICODE] - 90 seconds.
+[*][ICODE]30m[/ICODE] - 30 minutes.
+[*][ICODE]2h[/ICODE] - 2 hours.
+[*][ICODE]1d[/ICODE] - 1 day.
+[*][ICODE]30[/ICODE] - 30 minutes; bare positive numbers mean minutes.
+[*][ICODE]inf[/ICODE] or [ICODE]infinite[/ICODE] - Unlimited time.
+[/LIST]
+Use one unit per duration. Combined values such as 1h30m, zero, negative durations, and values that overflow the supported range are rejected.
+
+[B]Examples[/B]
+[CODE]/chunkloader give Steve 30m
+/cl give Alex 2h 4
+/cloader give all infinite
+/chunkloader list 2
+/chunkloader show
+/chunkloader reload[/CODE]
+
+[SIZE=5][B]4. Permissions[/B][/SIZE]
+[TABLE]
+[TR][TH]Node[/TH][TH]Default[/TH][TH]Access[/TH][/TR]
+[TR][TD]chunkloader.use[/TD][TD]Everyone[/TD][TD]Place, manage, refuel, and remove your own loaders.[/TD][/TR]
+[TR][TD]chunkloader.show[/TD][TD]Everyone[/TD][TD]Toggle personal chunk borders.[/TD][/TR]
+[TR][TD]chunkloader.list[/TD][TD]Everyone[/TD][TD]List your own loaders.[/TD][/TR]
+[TR][TD]chunkloader.give[/TD][TD]Operators[/TD][TD]Give loader items.[/TD][/TR]
+[TR][TD]chunkloader.reload[/TD][TD]Operators[/TD][TD]Reload configuration and messages.[/TD][/TR]
+[TR][TD]chunkloader.settings[/TD][TD]Operators[/TD][TD]Use the settings menu.[/TD][/TR]
+[TR][TD]chunkloader.bypass[/TD][TD]Operators[/TD][TD]Manage other owners' loaders and bypass the per-player placement cap.[/TD][/TR]
+[TR][TD]chunkloader.admin[/TD][TD]Operators[/TD][TD]Includes all nodes above and displays all loaders in the list.[/TD][/TR]
+[/TABLE]
+
+The global loader cap and disabled-world list apply to administrators too. Another plugin may grant additional shared access through the public API. Placement, interaction, and confirmed removal respect relevant cancellation events from protection plugins.
+
+[SIZE=5][B]5. Configuration[/B][/SIZE]
+Edit [ICODE]plugins/ChunkLoader/config.yml[/ICODE], then run [ICODE]/chunkloader reload[/ICODE]. The settings menu provides toggles for holograms, particles, XP, economy, breaking, random-tick fallback, and spawner simulation. Edit the file to change prices, materials, durations, limits, and work budgets.
+
+[SPOILER=Default config.yml]
+[CODE]loader:
+  material: END_PORTAL_FRAME
+  max-per-player: 16
+  max-total: 2048
+  allow-breaking: false
+  disabled-worlds: []
+fuel:
+  duration: 30m
+  xp:
+    enabled: true
+    levels: 10
+  economy:
+    enabled: true
+    cost: 5000.0
+display:
+  holograms: true
+  particles: true
+  borders-interval-ticks: 10
+simulation:
+  random-ticks: true
+  spawners: true
+  interval-ticks: 3
+  max-chunks-per-tick: 8
+  max-random-samples-per-chunk: 2048
+storage:
+  autosave-seconds: 30[/CODE]
+[/SPOILER]
+
+[B]Loader options[/B]
+[LIST]
+[*][ICODE]loader.material[/ICODE] - Solid placeable item used for newly issued loaders. Existing loaders retain their original material.
+[*][ICODE]loader.max-per-player[/ICODE] - Maximum placed loaders per owner; default 16.
+[*][ICODE]loader.max-total[/ICODE] - Global placed-loader cap; default 2048.
+[*][ICODE]loader.allow-breaking[/ICODE] - Whether manual removal returns remaining-time items; default false.
+[*][ICODE]loader.disabled-worlds[/ICODE] - World names where new loaders cannot be placed. Existing loaders are retained.
+[/LIST]
+
+[B]Fuel options[/B]
+[LIST]
+[*][ICODE]fuel.duration[/ICODE] - Finite positive duration added by one XP or economy purchase; default 30m.
+[*][ICODE]fuel.xp.enabled[/ICODE] and [ICODE]fuel.xp.levels[/ICODE] - Enable XP purchases and set their level cost; defaults true and 10.
+[*][ICODE]fuel.economy.enabled[/ICODE] and [ICODE]fuel.economy.cost[/ICODE] - Enable Vault purchases and set their price; defaults true and 5000.0. An economy provider is required.
+[/LIST]
+
+[B]Display options[/B]
+[LIST]
+[*][ICODE]display.holograms[/ICODE] - Enable native text displays showing remaining time; default true. No hologram dependency is needed.
+[*][ICODE]display.particles[/ICODE] - Enable loader removal particles; default true.
+[*][ICODE]display.borders-interval-ticks[/ICODE] - Border refresh interval; default 10 ticks. Borders are visible only to the requesting player, cover at most the nearest 16 loader chunks within eight chunks on each horizontal axis, and never load additional chunks.
+[/LIST]
+
+[B]Simulation and storage options[/B]
+[LIST]
+[*][ICODE]simulation.random-ticks[/ICODE] - Enable bounded fallback random block ticks; default true. Paper already performs native random ticking in entity-ticking chunks, so supplemental ticking is skipped there to avoid accelerated growth. Disabling this option does not disable Paper's native ticking.
+[*][ICODE]simulation.spawners[/ICODE] - Simulate standard spawners that are not naturally activated; default true.
+[*][ICODE]simulation.interval-ticks[/ICODE] - Delay between supplemental simulation passes; default 3 ticks.
+[*][ICODE]simulation.max-chunks-per-tick[/ICODE] - Maximum chunks visited per simulation pass; default 8, despite the setting's historical name.
+[*][ICODE]simulation.max-random-samples-per-chunk[/ICODE] - Sample budget for one visited fallback chunk; default 2048.
+[*][ICODE]storage.autosave-seconds[/ICODE] - Periodic remaining-time checkpoint interval; default 30 seconds.
+[/LIST]
+
+Work is distributed between chunks. If supplemental simulation reaches its configured work budget, its throughput can fall below vanilla speed. Increasing the global placement cap does not guarantee acceptable performance on a particular server; choose limits that suit your hardware and farms.
+
+[SIZE=5][B]6. Messages[/B][/SIZE]
+All bundled messages are English. Edit [ICODE]plugins/ChunkLoader/messages.yml[/ICODE] to customize them. Messages support MiniMessage formatting, such as [ICODE]<gold>Text</gold>[/ICODE]. Keep placeholder names intact. Player names and other substitutions are inserted as plain text. Run [ICODE]/chunkloader reload[/ICODE] after saving.
+
+Invalid configuration leaves the previous active settings in use and records the problem in the console. Correct the file before reloading again.
+
+[SIZE=5][B]7. Data, backups, and upgrades[/B][/SIZE]
+[LIST]
+[*][ICODE]loaders.json[/ICODE] stores loader IDs, owner and world UUIDs, coordinates, remaining ticks, and the material used by each placement.
+[*][ICODE]loaders.json.bak[/ICODE] contains the previous validated snapshot.
+[*]Placement, time additions, and removals request an immediate background save. Timer updates are saved periodically. Graceful shutdown waits for the final save.
+[*]An abrupt process or machine failure can lose changes that have not reached disk. Back up the plugin folder together with your worlds.
+[*]A malformed primary data file prevents safe startup and is never silently overwritten. Stop the server before manually restoring a known-good backup.
+[*]When updating, stop the server, back up its data and worlds, replace the plugin JAR, and restart.
+[/LIST]
+
+This is a fresh implementation. Data files, legacy item tags, commands, and permissions from the original or other chunk-loading plugins are not imported automatically. Remove the old plugin, issue fresh ChunkLoader items, and recreate its placements.
+
+[SIZE=5][B]8. Farm behavior and compatibility[/B][/SIZE]
+Plugin tickets keep chunks entity-ticking, which supports machines, entities, and native random block and fluid ticks. ChunkLoader avoids adding duplicate crop ticks. Standard inactive spawners are handled through a bounded public-API simulation that respects current entity snapshots, weighted potential entries, delay ranges, spawn counts, nearby caps, available custom light rules, collision, difficulty, and cancellable spawn events.
+
+Public APIs do not expose every native species-specific spawn predicate or equipment-table operation. Complex customized spawners can differ from vanilla. Simulated spawner events also have a different nesting order from native events. Verify combinations with plugins that depend on exact spawning rules or event order. Trial spawners, natural mob spawning, and farms requiring player interaction retain their native requirements.
+
+The initial version passed runtime checks on Paper 1.21.11 build 132, 26.1.2 build 74, 26.2 build 134, and 26.3 build 218. These checks included zero-player crops, furnaces, hoppers, custom spawner snapshots, event cancellation, overlapping tickets, expiration, and restart persistence. See [URL=https://github.com/lino9999/ChunkLoader/blob/main/docs/COMPATIBILITY.md]the compatibility record[/URL] for scope and limitations.
+
+[SIZE=5][B]9. Troubleshooting[/B][/SIZE]
+[B]The plugin will not enable.[/B]
+Check the server software and Java version first. Read the first ChunkLoader error in the console. A corrupt loaders.json also prevents safe startup.
+
+[B]Nothing happens when I place an ordinary end portal frame.[/B]
+Only items issued by ChunkLoader carry its persistent item marker. Use the give command.
+
+[B]I cannot place another loader.[/B]
+Check chunkloader.use, the world restriction list, your per-player cap, the global cap, and your protection plugins. Storage errors can temporarily block new placements and time additions.
+
+[B]The economy button is missing or payment fails.[/B]
+Enable economy purchases, install Vault, and confirm an economy plugin has registered a provider. Check the player's balance and the configured price.
+
+[B]My farm stops when the server is empty.[/B]
+Set pause-when-empty-seconds=-1 and restart. Check that the loader has remaining time and that the farm lies inside its chunk. Player-dependent mechanics may still need players.
+
+[B]How can I report a problem?[/B]
+Open an issue with your ChunkLoader version, exact Paper build, Java version, relevant settings, other related plugins, steps to reproduce, and the matching console error.
+
+[CENTER][URL=https://github.com/lino9999/ChunkLoader/issues][B]Open a support issue[/B][/URL] | [URL=https://github.com/lino9999/ChunkLoader/releases/latest][B]Download the latest release[/B][/URL][/CENTER]

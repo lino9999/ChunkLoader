@@ -8,4 +8,4 @@ Paper API and Vault API are compile-time provided dependencies and are not bundl
 
 The Apache Maven Wrapper scripts are unmodified upstream generated scripts with Apache License 2.0 notices retained. Source: https://github.com/apache/maven-wrapper.
 
-JUnit and Mockito are development-only dependencies and are not bundled. Sources: https://github.com/junit-team/junit-framework and https://github.com/mockito/mockito.
+JUnit and Mockito were used for the initial verification and are not included in this repository or the distributed plugin.
