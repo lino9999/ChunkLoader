@@ -1,0 +1,11 @@
+/Plugin originale/
+/.work/
+target/
+/.idea/
+/.vscode/
+*.iml
+*.log
+.DS_Store
+Thumbs.db
+/.env
+/.env.*

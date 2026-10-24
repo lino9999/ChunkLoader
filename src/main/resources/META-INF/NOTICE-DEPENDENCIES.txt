@@ -1,0 +1,13 @@
+ChunkLoader includes the following relocated libraries:
+
+Google Gson 2.13.2
+Copyright Google LLC and the Gson contributors.
+https://github.com/google/gson
+Licensed under the Apache License, Version 2.0.
+See LICENSE-GSON.txt.
+
+Error Prone annotations 2.41.0
+Copyright Google LLC and the Error Prone contributors.
+https://github.com/google/error-prone
+Licensed under the Apache License, Version 2.0.
+See LICENSE-ERROR-PRONE.txt.

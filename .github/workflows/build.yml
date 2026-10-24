@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['21', '25']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - name: Verify
+        run: bash ./mvnw -B --no-transfer-progress verify
+      - name: Upload plugin
+        uses: actions/upload-artifact@v7
+        with:
+          name: ChunkLoader-java-${{ matrix.java }}
+          path: target/ChunkLoader-*.jar
+          if-no-files-found: error
+          retention-days: 14

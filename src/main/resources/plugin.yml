@@ -1,0 +1,43 @@
+name: ChunkLoader
+version: '${project.version}'
+main: io.github.lino.chunkloader.ChunkLoaderPlugin
+api-version: '1.21.11'
+description: Keep Minecraft chunks and farms running with timed or permanent chunk loaders.
+author: Lino
+website: https://github.com/lino9999/ChunkLoader
+softdepend: [Vault]
+commands:
+  chunkloader:
+    description: Manage chunk loaders, time, and chunk borders.
+    usage: /chunkloader help
+    aliases: [cloader, cl]
+permissions:
+  chunkloader.use:
+    description: Place, open, refuel, and remove your own loaders.
+    default: true
+  chunkloader.show:
+    description: Toggle personal chunk border particles.
+    default: true
+  chunkloader.list:
+    description: List your own loaders.
+    default: true
+  chunkloader.admin:
+    description: Manage all loaders and use administrative commands.
+    default: op
+    children:
+      chunkloader.use: true
+      chunkloader.show: true
+      chunkloader.list: true
+      chunkloader.give: true
+      chunkloader.reload: true
+      chunkloader.settings: true
+      chunkloader.bypass: true
+  chunkloader.give:
+    default: op
+  chunkloader.reload:
+    default: op
+  chunkloader.settings:
+    default: op
+  chunkloader.bypass:
+    description: Access other players' loaders and bypass placement limits.
+    default: op

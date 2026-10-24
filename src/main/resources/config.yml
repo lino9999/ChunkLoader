@@ -1,0 +1,26 @@
+loader:
+  material: END_PORTAL_FRAME
+  max-per-player: 16
+  max-total: 2048
+  allow-breaking: false
+  disabled-worlds: []
+fuel:
+  duration: 30m
+  xp:
+    enabled: true
+    levels: 10
+  economy:
+    enabled: true
+    cost: 5000.0
+display:
+  holograms: true
+  particles: true
+  borders-interval-ticks: 10
+simulation:
+  random-ticks: true
+  spawners: true
+  interval-ticks: 3
+  max-chunks-per-tick: 8
+  max-random-samples-per-chunk: 2048
+storage:
+  autosave-seconds: 30
